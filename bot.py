@@ -23,45 +23,88 @@ def run_server():
     server = HTTPServer(('0.0.0.0', port), HealthCheckHandler)
     server.serve_forever()
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_name = update.effective_user.first_name
-    
-    # ইমোজিযুক্ত আকর্ষণীয় বাটন ডিজাইন
+# মূল মেনু ফাংশন (ব্যাক করার জন্য এটি রিইউজ করা হবে)
+def get_main_menu_markup():
     keyboard = [
         [
-            InlineKeyboardButton("📥 গেট নাম্বার (Get)", callback_data="get_number"),
-            InlineKeyboardButton("⚡ লাইভ নাম্বার (Live)", callback_data="live_number"),
+            InlineKeyboardButton("📥 গেট নাম্বার", callback_data="get_number"),
+            InlineKeyboardButton("🔍 সার্চ নাম্বার", callback_data="search_number"),
         ],
         [
-            InlineKeyboardButton("💰 ব্যালেন্স চেক", callback_data="check_balance"),
-            InlineKeyboardButton("📞 হেল্প / সাপোর্ট", callback_data="support")
+            InlineKeyboardButton("⚡ লাইভ নাম্বার", callback_data="live_number"),
+            InlineKeyboardButton("📊 ট্রাফিক", callback_data="traffic"),
+        ],
+        [
+            InlineKeyboardButton("🔐 2FA অনলাইন", callback_data="two_fa"),
+            InlineKeyboardButton("👥 রেফারেল", callback_data="referral"),
+        ],
+        [
+            InlineKeyboardButton("💰 ব্যালেন্স", callback_data="check_balance"),
+            InlineKeyboardButton("🏆 লিডারবোর্ড", callback_data="leaderboard"),
+        ],
+        [
+            InlineKeyboardButton("👤 মাই প্রোফাইল", callback_data="my_profile"),
+            InlineKeyboardButton("📞 সাপোর্ট", callback_data="support")
         ]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    return InlineKeyboardMarkup(keyboard)
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_name = update.effective_user.first_name
+    reply_markup = get_main_menu_markup()
     
     welcome_text = (
         f"✨ **স্বাগতম, {user_name}!** ✨\n\n"
-        f"আপনার প্রয়োজনীয় সার্ভিসটি নিচে থেকে সিলেক্ট করুন 👇"
+        f"নিচের বাটনগুলো থেকে আপনার প্রয়োজনীয় সেবাটি বেছে নিন 👇"
     )
     
-    await update.message.reply_text(
-        welcome_text,
-        reply_markup=reply_markup,
-        parse_mode="Markdown"
-    )
+    # যদি কমান্ডের মাধ্যমে আসে (message) অথবা ব্যাক বাটন থেকে আসে (callback_query)
+    if update.message:
+        await update.message.reply_text(welcome_text, reply_markup=reply_markup, parse_mode="Markdown")
+    elif update.callback_query:
+        query = update.callback_query
+        await query.answer()
+        await query.edit_message_text(text=welcome_text, reply_markup=reply_markup, parse_mode="Markdown")
 
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
-    if query.data == "get_number":
-        await query.edit_message_text(text="📥 আপনি **'Get Number'** সিলেক্ট করেছেন।\n\n*(এখানে আপনার এপিআই লজিক যুক্ত করা হবে)*", parse_mode="Markdown")
-    elif query.data == "live_number":
-        await query.edit_message_text(text="⚡ আপনি **'Live Number'** সিলেক্ট করেছেন।\n\n*(এখানে আপনার এপিআই লজিক যুক্ত করা হবে)*", parse_mode="Markdown")
-    elif query.data == "check_balance":
-        await query.edit_message_text(text="💰 আপনার একাউন্টের ব্যালেন্স চেক করা হচ্ছে...\n\n*(এখানে ব্যালেন্সের এপিআই যুক্ত হবে)*", parse_mode="Markdown")
-    elif query.data == "support":
-        await query.edit_message_text(text="📞 কোনো সমস্যা হলে অ্যাডমিনের সাথে যোগাযোগ করুন।", parse_mode="Markdown")
+    data = query.data
+    
+    # ব্যাক বাটনের কাজ (মেইন মেনুতে ফিরিয়ে নিয়ে যাওয়া)
+    if data == "main_menu":
+        user_name = update.effective_user.first_name
+        welcome_text = (
+            f"✨ **স্বাগতম, {user_name}!** ✨\n\n"
+            f"নিচের বাটনগুলো থেকে আপনার প্রয়োজনীয় সেবাটি বেছে নিন 👇"
+        )
+        await query.edit_message_text(text=welcome_text, reply_markup=get_main_menu_markup(), parse_mode="Markdown")
+        return
+
+    # প্রতিটি ফিচারের সাথে নিচে একটি করে "🔙 ব্যাক" বাটন যুক্ত করা হলো
+    back_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 মূল মেনুতে ফিরে যান", callback_data="main_menu")]])
+
+    if data == "get_number":
+        await query.edit_message_text(text="📥 আপনি **'Get Number'** সিলেক্ট করেছেন।\n\n*(এখানে ফেসবুক, ইমু বা টেলিগ্রাম সার্ভিস ও কান্ট্রি সিলেকশনের এপিআই লজিক যুক্ত হবে)*", reply_markup=back_markup, parse_mode="Markdown")
+    elif data == "search_number":
+        await query.edit_message_text(text="🔍 আপনি **'Search Number'** সিলেক্ট করেছেন।\n\n*(এখানে নাম্বার রেঞ্জ দিয়ে সার্চ করার অপশন থাকবে)*", reply_markup=back_markup, parse_mode="Markdown")
+    elif data == "live_number":
+        await query.edit_message_text(text="⚡ আপনি **'Live Number'** সিলেক্ট করেছেন।", reply_markup=back_markup, parse_mode="Markdown")
+    elif data == "traffic":
+        await query.edit_message_text(text="📊 বর্তমান সার্ভার ট্রাফিক স্ট্যাটাস:\n\n• ক্যামেরুন: হাই ট্রাফিক 🔥\n• আর্মেনিয়া/বেনিন: মিডিয়াম ট্রাফিক ⚡\n• ইন্ডিয়া: লো ট্রাফিক 🟢", reply_markup=back_markup, parse_mode="Markdown")
+    elif data == "two_fa":
+        await query.edit_message_text(text="🔐 আপনি **'2FA Online'** সিলেক্ট করেছেন।\n\n*(এখানে ফেসবুক বা ইনস্টাগ্রামের 2FA কোড বের করার মেথড থাকবে)*", reply_markup=back_markup, parse_mode="Markdown")
+    elif data == "referral":
+        await query.edit_message_text(text="👥 আপনার রেফারেল লিংক এবং তথ্য দেখতে এখানে অপশন থাকবে।", reply_markup=back_markup, parse_mode="Markdown")
+    elif data == "check_balance":
+        await query.edit_message_text(text="💰 আপনার একাউন্টের ব্যালেন্স ও উইথড্র অপশন এখানে শো করবে।", reply_markup=back_markup, parse_mode="Markdown")
+    elif data == "leaderboard":
+        await query.edit_message_text(text="🏆 আজকের টপ ওটিপি রিসিভার ও উইনারদের তালিকা এখানে দেখা যাবে।", reply_markup=back_markup, parse_mode="Markdown")
+    elif data == "my_profile":
+        await query.edit_message_text(text="👤 আপনার প্রোফাইল বিবরণী এবং স্ট্যাটাস এখানে দেখতে পাবেন।", reply_markup=back_markup, parse_mode="Markdown")
+    elif data == "support":
+        await query.edit_message_text(text="📞 কোনো সমস্যা হলে সরাসরি অ্যাডমিনের সাথে যোগাযোগ করুন বা সাপোর্ট লিংকে মেসেজ দিন।", reply_markup=back_markup, parse_mode="Markdown")
 
 if __name__ == '__main__':
     server_thread = Thread(target=run_server)
