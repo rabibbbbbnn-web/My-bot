@@ -23,12 +23,10 @@ def run_server():
     server = HTTPServer(('0.0.0.0', port), HealthCheckHandler)
     server.serve_forever()
 
-# গ্লোবাল ভ্যারিয়েবল (এপিআই কি সংরক্ষণ করার জন্য)
 API_SETTINGS = {
     "vortex_api": "সংযুক্ত করা হয়নি ❌"
 }
 
-# মূল ইউজার মেনু
 def get_main_menu_markup():
     keyboard = [
         [
@@ -54,7 +52,6 @@ def get_main_menu_markup():
     ]
     return InlineKeyboardMarkup(keyboard)
 
-# অ্যাডমিন প্যানেল মেনু
 def get_admin_menu_markup():
     keyboard = [
         [
@@ -78,11 +75,7 @@ def get_admin_menu_markup():
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_name = update.effective_user.first_name
     reply_markup = get_main_menu_markup()
-    
-    welcome_text = (
-        f"✨ **স্বাগতম, {user_name}!** ✨\n\n"
-        f"নিচের বাটনগুলো থেকে আপনার প্রয়োজনীয় সেবাটি বেছে নিন 👇"
-    )
+    welcome_text = f"✨ **স্বাগতম, {user_name}!** ✨\n\nনিচের বাটনগুলো থেকে আপনার প্রয়োজনীয় সেবাটি বেছে নিন 👇"
     
     if update.message:
         await update.message.reply_text(welcome_text, reply_markup=reply_markup, parse_mode="Markdown")
@@ -91,15 +84,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer()
         await query.edit_message_text(text=welcome_text, reply_markup=reply_markup, parse_mode="Markdown")
 
-# অ্যাডমিন প্যানেল কমান্ড (/admin)
 async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # এখানে আপনি চাইলে আপনার টেলিগ্রাম আইডি চেক করে রেস্ট্রিক্ট করতে পারেন যাতে শুধু আপনিই ঢুকতে পারেন
     reply_markup = get_admin_menu_markup()
-    admin_text = (
-        f"👑 **স্বাগতম, অ্যাডমিন প্যানেলে!** 👑\n\n"
-        f"বর্তমান এপিআই স্ট্যাটাস: `{API_SETTINGS['vortex_api']}`\n\n"
-        f"নিচের অপশনগুলো থেকে আপনার বটের সবকিছু নিয়ন্ত্রণ করুন 👇"
-    )
+    admin_text = f"👑 **স্বাগতম, অ্যাডমিন প্যানেলে!** 👑\n\nবর্তমান এপিআই স্ট্যাটাস: `{API_SETTINGS['vortex_api']}`\n\nনিচের অপশনগুলো থেকে আপনার বটের সবকিছু নিয়ন্ত্রণ করুন 👇"
     
     if update.message:
         await update.message.reply_text(admin_text, reply_markup=reply_markup, parse_mode="Markdown")
@@ -120,16 +107,10 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await admin_panel(update, context)
         return
 
-    # অ্যাডমিন প্যানেলের সাব-ফিচারগুলো
     if data == "set_vortex_api":
-        # ভিডিওতে যেভাবে দেখানো হয়েছে: এখানে আপনার প্যানেলের এপিআই কি যুক্ত করার অপশন থাকবে
         API_SETTINGS['vortex_api'] = "সফলভাবে সংযুক্ত ✅ (Active Key)"
         back_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 অ্যাডমিন প্যানেলে ফিরুন", callback_data="admin_menu")]])
-        await query.edit_message_text(
-            text=f"🔑 **ভোল্টেক্স এপিআই প্যানেল**\n\nআপনার এপিআই কি সফলভাবে যুক্ত করা হয়েছে!\nবর্তমান স্ট্যাটাস: `{API_SETTINGS['vortex_api']}`",
-            reply_markup=back_markup,
-            parse_mode="Markdown"
-        )
+        await query.edit_message_text(text=f"🔑 **ভোল্টেক্স এপিআই প্যানেল**\n\nআপনার এপিআই কি সফলভাবে যুক্ত করা হয়েছে!\nবর্তমান স্ট্যাটাস: `{API_SETTINGS['vortex_api']}`", reply_markup=back_markup, parse_mode="Markdown")
         return
     elif data == "admin_leaderboard":
         back_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 অ্যাডমিন প্যানেলে ফিরুন", callback_data="admin_menu")]])
@@ -152,11 +133,10 @@ async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(text="🔄 **সুইচ ডিজাইন**\n\nবটের লুক ও ডিজাইন পরিবর্তনের অপশন।", reply_markup=back_markup, parse_mode="Markdown")
         return
 
-    # ইউজার ফিচারের বাটনগুলো ও ব্যাক বাটন
     back_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 মূল মেনুতে ফিরে যান", callback_data="main_menu")]])
 
     if data == "get_number":
-        await query.edit_message_text(text=f"📥 আপনি **'Get Number'** সিলেক্ট করেছেন।\n\nএপিআই স্ট্যাটাস: {API_SETTINGS['vortex_api']}\n*(এখানে আপনার প্যানেল থেকে নাম্বার ফেচ হবে)*", reply_markup=back_markup, parse_mode="Markdown")
+        await query.edit_message_text(text=f"📥 আপনি **'Get Number'** সিলেক্ট করেছেন।\n\nএপিআই স্ট্যাটাস: {API_SETTINGS['vortex_api']}", reply_markup=back_markup, parse_mode="Markdown")
     elif data == "search_number":
         await query.edit_message_text(text="🔍 আপনি **'Search Number'** সিলেক্ট করেছেন।", reply_markup=back_markup, parse_mode="Markdown")
     elif data == "live_number":
@@ -187,7 +167,7 @@ if __name__ == '__main__':
 
     application = ApplicationBuilder().token(BOT_TOKEN).build()
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("admin", admin_panel))  # নতুন অ্যাডমিন কমান্ড যুক্ত করা হলো
+    application.add_handler(CommandHandler("admin", admin_panel))
     application.add_handler(CallbackQueryHandler(button_click))
     
     print("বট সফলভাবে চালু হচ্ছে...")
