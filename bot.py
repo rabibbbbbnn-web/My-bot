@@ -7,6 +7,9 @@ from telegram.ext import (
 )
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
+# SMSApp API Key যুক্ত করা হলো
+SMSAPP_API_KEY = "sk_ZoM2uldkNxqxsHHKRSab93EAQPKiVTL4fWdU6hQtLiE"
+
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
