@@ -1,25 +1,49 @@
+
+import os
 import logging
-from telegram import Update
+from threading import Thread
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram import Update
 
-# BotFather থেকে পাওয়া আপনার টোকেনটি এখানে বসাবেন
-BOT_TOKEN = "9079854843:AAHAZP9ZDmtdamKJDw0F13bWdxS12T7x0_0"
+# Logging setup
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+# Simple HTTP handler for port binding
+class HealthCheckHandler(SimpleHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is running")
 
-# /start কমান্ড দিলে বট যা উত্তর দিবে
+def run_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(('0.0.0.0', port), HealthCheckHandler)
+    server.serve_forever()
+
+# Command handler
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_name = update.effective_user.first_name
     await update.message.reply_text(
-        f"স্বাগতম, {user_name}!\n\nআপনার বট সফলভাবে চালু হয়েছে। খুব শীঘ্রই এখানে নম্বর নেওয়ার সিস্টেম যুক্ত করা হবে।"
+        f"স্বাগতম, {user_name}!\nআপনার বট সফলভাবে চালু হয়েছে।"
     )
 
-def main():
+if __name__ == '__main__':
+    # Start web server in a separate thread
+    server_thread = Thread(target=run_server)
+    server_thread.daemon = True
+    server_thread.start()
+
+    # Initialize Telegram Bot
+    BOT_TOKEN = "9079854843:AAHAZP9ZDmtdamKJDw0F13bWdxS12T7x0_0"
     application = ApplicationBuilder().token(BOT_TOKEN).build()
+    
     application.add_handler(CommandHandler("start", start))
     
     print("বট চালু হচ্ছে...")
     application.run_polling()
 
-if __name__ == "__main__":
-    main()
+
