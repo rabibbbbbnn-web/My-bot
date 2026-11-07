@@ -23,7 +23,12 @@ def run_server():
     server = HTTPServer(('0.0.0.0', port), HealthCheckHandler)
     server.serve_forever()
 
-# মূল মেনু ফাংশন (ব্যাক করার জন্য এটি রিইউজ করা হবে)
+# গ্লোবাল ভ্যারিয়েবল (এপিআই কি সংরক্ষণ করার জন্য)
+API_SETTINGS = {
+    "vortex_api": "সংযুক্ত করা হয়নি ❌"
+}
+
+# মূল ইউজার মেনু
 def get_main_menu_markup():
     keyboard = [
         [
@@ -49,6 +54,27 @@ def get_main_menu_markup():
     ]
     return InlineKeyboardMarkup(keyboard)
 
+# অ্যাডমিন প্যানেল মেনু
+def get_admin_menu_markup():
+    keyboard = [
+        [
+            InlineKeyboardButton("🔑 ভোল্টেক্স এপিআই সেটআপ", callback_data="set_vortex_api"),
+            InlineKeyboardButton("📊 লিডারবোর্ড ম্যানেজমেন্ট", callback_data="admin_leaderboard"),
+        ],
+        [
+            InlineKeyboardButton("📢 ব্রডকাস্ট মেসেজ", callback_data="admin_broadcast"),
+            InlineKeyboardButton("👥 ইউজার ইনফো", callback_data="admin_users"),
+        ],
+        [
+            InlineKeyboardButton("⚙️ সিস্টেম সেটিং", callback_data="admin_settings"),
+            InlineKeyboardButton("🔄 সুইচ ডিজাইন", callback_data="admin_switch_design"),
+        ],
+        [
+            InlineKeyboardButton("🔙 মূল মেনুতে ফিরে যান", callback_data="main_menu")
+        ]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_name = update.effective_user.first_name
     reply_markup = get_main_menu_markup()
@@ -58,7 +84,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"নিচের বাটনগুলো থেকে আপনার প্রয়োজনীয় সেবাটি বেছে নিন 👇"
     )
     
-    # যদি কমান্ডের মাধ্যমে আসে (message) অথবা ব্যাক বাটন থেকে আসে (callback_query)
     if update.message:
         await update.message.reply_text(welcome_text, reply_markup=reply_markup, parse_mode="Markdown")
     elif update.callback_query:
@@ -66,45 +91,90 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.answer()
         await query.edit_message_text(text=welcome_text, reply_markup=reply_markup, parse_mode="Markdown")
 
+# অ্যাডমিন প্যানেল কমান্ড (/admin)
+async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # এখানে আপনি চাইলে আপনার টেলিগ্রাম আইডি চেক করে রেস্ট্রিক্ট করতে পারেন যাতে শুধু আপনিই ঢুকতে পারেন
+    reply_markup = get_admin_menu_markup()
+    admin_text = (
+        f"👑 **স্বাগতম, অ্যাডমিন প্যানেলে!** 👑\n\n"
+        f"বর্তমান এপিআই স্ট্যাটাস: `{API_SETTINGS['vortex_api']}`\n\n"
+        f"নিচের অপশনগুলো থেকে আপনার বটের সবকিছু নিয়ন্ত্রণ করুন 👇"
+    )
+    
+    if update.message:
+        await update.message.reply_text(admin_text, reply_markup=reply_markup, parse_mode="Markdown")
+    elif update.callback_query:
+        query = update.callback_query
+        await query.answer()
+        await query.edit_message_text(text=admin_text, reply_markup=reply_markup, parse_mode="Markdown")
+
 async def button_click(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    
     data = query.data
     
-    # ব্যাক বাটনের কাজ (মেইন মেনুতে ফিরিয়ে নিয়ে যাওয়া)
     if data == "main_menu":
-        user_name = update.effective_user.first_name
-        welcome_text = (
-            f"✨ **স্বাগতম, {user_name}!** ✨\n\n"
-            f"নিচের বাটনগুলো থেকে আপনার প্রয়োজনীয় সেবাটি বেছে নিন 👇"
-        )
-        await query.edit_message_text(text=welcome_text, reply_markup=get_main_menu_markup(), parse_mode="Markdown")
+        await start(update, context)
+        return
+    elif data == "admin_menu":
+        await admin_panel(update, context)
         return
 
-    # প্রতিটি ফিচারের সাথে নিচে একটি করে "🔙 ব্যাক" বাটন যুক্ত করা হলো
+    # অ্যাডমিন প্যানেলের সাব-ফিচারগুলো
+    if data == "set_vortex_api":
+        # ভিডিওতে যেভাবে দেখানো হয়েছে: এখানে আপনার প্যানেলের এপিআই কি যুক্ত করার অপশন থাকবে
+        API_SETTINGS['vortex_api'] = "সফলভাবে সংযুক্ত ✅ (Active Key)"
+        back_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 অ্যাডমিন প্যানেলে ফিরুন", callback_data="admin_menu")]])
+        await query.edit_message_text(
+            text=f"🔑 **ভোল্টেক্স এপিআই প্যানেল**\n\nআপনার এপিআই কি সফলভাবে যুক্ত করা হয়েছে!\nবর্তমান স্ট্যাটাস: `{API_SETTINGS['vortex_api']}`",
+            reply_markup=back_markup,
+            parse_mode="Markdown"
+        )
+        return
+    elif data == "admin_leaderboard":
+        back_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 অ্যাডমিন প্যানেলে ফিরুন", callback_data="admin_menu")]])
+        await query.edit_message_text(text="📊 **লিডারবোর্ড ম্যানেজমেন্ট**\n\n• অটো রিওয়ার্ড: অন\n• টপ কাউন্ট: ১৫ জন\n• থিম: ডার্ক", reply_markup=back_markup, parse_mode="Markdown")
+        return
+    elif data == "admin_broadcast":
+        back_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 অ্যাডমিন প্যানেলে ফিরুন", callback_data="admin_menu")]])
+        await query.edit_message_text(text="📢 **ব্রডকাস্ট সিস্টেম**\n\nসকল ইউজারের কাছে মেসেজ পাঠানোর অপশন এখানে কাজ করবে।", reply_markup=back_markup, parse_mode="Markdown")
+        return
+    elif data == "admin_users":
+        back_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 অ্যাডমিন প্যানেলে ফিরুন", callback_data="admin_menu")]])
+        await query.edit_message_text(text="👥 **ইউজার ইনফো**\n\nসকল ইউজারের ডাটা ফাইল আকারে ডাউনলোড করার সিস্টেম।", reply_markup=back_markup, parse_mode="Markdown")
+        return
+    elif data == "admin_settings":
+        back_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 অ্যাডমিন প্যানেলে ফিরুন", callback_data="admin_menu")]])
+        await query.edit_message_text(text="⚙️ **সিস্টেম সেটিং**\n\nফোর্স জয়েন চ্যানেল এবং এডমিন ম্যানেজমেন্ট কন্ট্রোল।", reply_markup=back_markup, parse_mode="Markdown")
+        return
+    elif data == "admin_switch_design":
+        back_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 অ্যাডমিন প্যানেলে ফিরুন", callback_data="admin_menu")]])
+        await query.edit_message_text(text="🔄 **সুইচ ডিজাইন**\n\nবটের লুক ও ডিজাইন পরিবর্তনের অপশন।", reply_markup=back_markup, parse_mode="Markdown")
+        return
+
+    # ইউজার ফিচারের বাটনগুলো ও ব্যাক বাটন
     back_markup = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 মূল মেনুতে ফিরে যান", callback_data="main_menu")]])
 
     if data == "get_number":
-        await query.edit_message_text(text="📥 আপনি **'Get Number'** সিলেক্ট করেছেন।\n\n*(এখানে ফেসবুক, ইমু বা টেলিগ্রাম সার্ভিস ও কান্ট্রি সিলেকশনের এপিআই লজিক যুক্ত হবে)*", reply_markup=back_markup, parse_mode="Markdown")
+        await query.edit_message_text(text=f"📥 আপনি **'Get Number'** সিলেক্ট করেছেন।\n\nএপিআই স্ট্যাটাস: {API_SETTINGS['vortex_api']}\n*(এখানে আপনার প্যানেল থেকে নাম্বার ফেচ হবে)*", reply_markup=back_markup, parse_mode="Markdown")
     elif data == "search_number":
-        await query.edit_message_text(text="🔍 আপনি **'Search Number'** সিলেক্ট করেছেন।\n\n*(এখানে নাম্বার রেঞ্জ দিয়ে সার্চ করার অপশন থাকবে)*", reply_markup=back_markup, parse_mode="Markdown")
+        await query.edit_message_text(text="🔍 আপনি **'Search Number'** সিলেক্ট করেছেন।", reply_markup=back_markup, parse_mode="Markdown")
     elif data == "live_number":
         await query.edit_message_text(text="⚡ আপনি **'Live Number'** সিলেক্ট করেছেন।", reply_markup=back_markup, parse_mode="Markdown")
     elif data == "traffic":
         await query.edit_message_text(text="📊 বর্তমান সার্ভার ট্রাফিক স্ট্যাটাস:\n\n• ক্যামেরুন: হাই ট্রাফিক 🔥\n• আর্মেনিয়া/বেনিন: মিডিয়াম ট্রাফিক ⚡\n• ইন্ডিয়া: লো ট্রাফিক 🟢", reply_markup=back_markup, parse_mode="Markdown")
     elif data == "two_fa":
-        await query.edit_message_text(text="🔐 আপনি **'2FA Online'** সিলেক্ট করেছেন।\n\n*(এখানে ফেসবুক বা ইনস্টাগ্রামের 2FA কোড বের করার মেথড থাকবে)*", reply_markup=back_markup, parse_mode="Markdown")
+        await query.edit_message_text(text="🔐 আপনি **'2FA Online'** সিলেক্ট করেছেন।", reply_markup=back_markup, parse_mode="Markdown")
     elif data == "referral":
-        await query.edit_message_text(text="👥 আপনার রেফারেল লিংক এবং তথ্য দেখতে এখানে অপশন থাকবে।", reply_markup=back_markup, parse_mode="Markdown")
+        await query.edit_message_text(text="👥 আপনার রেফারেল লিংক এবং তথ্য এখানে থাকবে।", reply_markup=back_markup, parse_mode="Markdown")
     elif data == "check_balance":
-        await query.edit_message_text(text="💰 আপনার একাউন্টের ব্যালেন্স ও উইথড্র অপশন এখানে শো করবে।", reply_markup=back_markup, parse_mode="Markdown")
+        await query.edit_message_text(text="💰 আপনার একাউন্টের ব্যালেন্স ও উইথড্র অপশন।", reply_markup=back_markup, parse_mode="Markdown")
     elif data == "leaderboard":
-        await query.edit_message_text(text="🏆 আজকের টপ ওটিপি রিসিভার ও উইনারদের তালিকা এখানে দেখা যাবে।", reply_markup=back_markup, parse_mode="Markdown")
+        await query.edit_message_text(text="🏆 আজকের টপ ওটিপি রিসিভার ও উইনারদের তালিকা।", reply_markup=back_markup, parse_mode="Markdown")
     elif data == "my_profile":
-        await query.edit_message_text(text="👤 আপনার প্রোফাইল বিবরণী এবং স্ট্যাটাস এখানে দেখতে পাবেন।", reply_markup=back_markup, parse_mode="Markdown")
+        await query.edit_message_text(text="👤 আপনার প্রোফাইল বিবরণী।", reply_markup=back_markup, parse_mode="Markdown")
     elif data == "support":
-        await query.edit_message_text(text="📞 কোনো সমস্যা হলে সরাসরি অ্যাডমিনের সাথে যোগাযোগ করুন বা সাপোর্ট লিংকে মেসেজ দিন।", reply_markup=back_markup, parse_mode="Markdown")
+        await query.edit_message_text(text="📞 সরাসরি অ্যাডমিনের সাথে যোগাযোগ বা সাপোর্ট লিংক।", reply_markup=back_markup, parse_mode="Markdown")
 
 if __name__ == '__main__':
     server_thread = Thread(target=run_server)
@@ -117,6 +187,7 @@ if __name__ == '__main__':
 
     application = ApplicationBuilder().token(BOT_TOKEN).build()
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("admin", admin_panel))  # নতুন অ্যাডমিন কমান্ড যুক্ত করা হলো
     application.add_handler(CallbackQueryHandler(button_click))
     
     print("বট সফলভাবে চালু হচ্ছে...")
