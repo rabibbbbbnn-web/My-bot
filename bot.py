@@ -9,8 +9,9 @@ from telegram.ext import (
 )
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
-SMSAPP_API_KEY = "sk_ZoM2uldkNxqxsHHKRSab93EAQPKiVTL4fWdU6hQtLiE"
-SMSAPP_BASE_URL = "https://backend.smsapp.io/v1"
+# IPRN Pro API Configuration
+SMSAPP_API_KEY = "514933|uNit3Xt65jvlbq0e4FGP0p0llJ15w3x0HJkr0Pty09310218"
+SMSAPP_BASE_URL = "https://iprn.pro/api"
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -89,7 +90,7 @@ async def handle_reply_keyboard(update: Update, context: ContextTypes.DEFAULT_TY
         await update.message.reply_text("আপনার রেফারেল লিংক: https://t.me/yourbot?start=ref123\nপ্রতি রেফারেল এ ১০ টাকা বোনাস!")
     elif text == "👤 My Profile":
         user = update.effective_user
-        await update.message.reply_text(f"👤 **আপনার প্রোফাইল**\n\nনাম: {user.first_name}\nআইডি: `{user.id}`\nব্যালেন্স: $0.00\nস্ট্যাটাস: Active ✅", parse_mode="Markdown")
+        await update.message.reply_text(f"👤 **আপনার প্রোফাইল**\n\nনাম: {user.first_name}\nআইডি: `{user.id}`\nব্যালেন্স: €0.00\nস্ট্যাটাস: Active ✅", parse_mode="Markdown")
     elif text == "🎧 Support":
         keyboard = [[InlineKeyboardButton("💬 Contact Support", url="https://t.me/YourSupportChannel")], [InlineKeyboardButton("❌ Close", callback_data="close_menu")]]
         await update.message.reply_text("যেকোনো প্রয়োজনে আমাদের সাপোর্ট টিমের সাথে যোগাযোগ করুন:", reply_markup=InlineKeyboardMarkup(keyboard))
@@ -105,7 +106,7 @@ async def show_traffic(update, edit=False):
     traffic_text = "🔥 **10 Minute LIVE Traffic** 🔥\n\n📘 **FACEBOOK 63**\n• CAMEROON : HIGH 🟢\n• LESOTHO : HIGH 🟢\n\n💬 **WHATSAPP 18**\n• MALI : HIGH 🟢\n\n📸 **INSTAGRAM 11**\n• ARMENIA : HIGH 🟢\n\n🕒 *Updated just now*"
     keyboard = [[InlineKeyboardButton("🔄 Refresh", callback_data="refresh_traffic")], [InlineKeyboardButton("❌ Close", callback_data="close_menu")]]
     if edit and update.callback_query:
-        await update.callback_query.edit_message_text(traffic_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+        await update.callback_query.edit_message_text(traffic_text, reply_markup=get_video_markup() if False else InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
     else:
         await update.message.reply_text(traffic_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
 
