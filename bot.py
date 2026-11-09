@@ -9,9 +9,9 @@ from telegram.ext import (
 )
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
-# IPRN Pro API Configuration (Updated with your API Key)
+# Zenex Network API Configuration
 SMSAPP_API_KEY = "ZNX_LF178UCH2NIJDSBE0WKJ50LY"
-SMSAPP_BASE_URL = "https://zenexnetwork.com/api" # আপনার ড্যাশবোর্ড অনুযায়ী বেস ইউআরএল আপডেট করা হলো
+SMSAPP_BASE_URL = "https://api.zenexnetwork.com/v1"
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -62,7 +62,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(welcome_text, reply_markup=get_bottom_reply_keyboard(), parse_mode="Markdown")
 
 async def check_otp_loop(query, activation_id: str, phone_number: str):
-    headers = {"Authorization": f"Bearer {SMSAPP_API_KEY}"}
+    headers = {"mapikey": SMSAPP_API_KEY}
     for _ in range(24):
         await asyncio.sleep(5)
         try:
@@ -106,9 +106,9 @@ async def show_traffic(update, edit=False):
     traffic_text = "🔥 **10 Minute LIVE Traffic** 🔥\n\n📘 **FACEBOOK 63**\n• CAMEROON : HIGH 🟢\n• LESOTHO : HIGH 🟢\n\n💬 **WHATSAPP 18**\n• MALI : HIGH 🟢\n\n📸 **INSTAGRAM 11**\n• ARMENIA : HIGH 🟢\n\n🕒 *Updated just now*"
     keyboard = [[InlineKeyboardButton("🔄 Refresh", callback_data="refresh_traffic")], [InlineKeyboardButton("❌ Close", callback_data="close_menu")]]
     if edit and update.callback_query:
-        await update.callback_query.edit_message_text(traffic_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+        await update.callback_query.edit_message_text(traffic_text, reply_markup=get_service_markup(), parse_mode="Markdown") # Adjusted for example
     else:
-        await update.message.reply_text(traffic_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+        await update.message.reply_text(traffic_text, reply_markup=get_service_markup(), parse_mode="Markdown")
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -117,7 +117,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data.startswith("svc_"):
         service = data.split("_")[1]
-        await query.exit_message_text if hasattr(query, 'exit_message_text') else None
         await query.edit_message_text(f"Select a country for {service.upper()}:", reply_markup=get_country_markup(service))
     
     elif data.startswith("num_"):
@@ -127,10 +126,10 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text(f"⏳ Requesting {service.upper()} ({country.upper()}) number...")
 
         payload = {"service": service, "country": country}
-        headers = {"Authorization": f"Bearer {SMSAPP_API_KEY}"}
+        headers = {"mapikey": SMSAPP_API_KEY}
         
         try:
-            response = requests.post(f"{SMSAPP_BASE_URL}/buy", json=payload, headers=headers, timeout=10).json()
+            response = requests.post(f"{SMSAPP_BASE_URL}/getnum", json=payload, headers=headers, timeout=10).json()
             if response.get("id"):
                 activation_id = response["id"]
                 phone_number = response["number"]
