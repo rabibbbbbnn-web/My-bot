@@ -9,9 +9,9 @@ from telegram.ext import (
 )
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
-# IPRN Pro API Configuration
-SMSAPP_API_KEY = "514933|uNit3Xt65jvlbq0e4FGP0p0llJ15w3x0HJkr0Pty09310218"
-SMSAPP_BASE_URL = "https://iprn.pro/api"
+# IPRN Pro API Configuration (Updated with your API Key)
+SMSAPP_API_KEY = "ZNX_LF178UCH2NIJDSBE0WKJ50LY"
+SMSAPP_BASE_URL = "https://zenexnetwork.com/api" # আপনার ড্যাশবোর্ড অনুযায়ী বেস ইউআরএল আপডেট করা হলো
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -106,7 +106,7 @@ async def show_traffic(update, edit=False):
     traffic_text = "🔥 **10 Minute LIVE Traffic** 🔥\n\n📘 **FACEBOOK 63**\n• CAMEROON : HIGH 🟢\n• LESOTHO : HIGH 🟢\n\n💬 **WHATSAPP 18**\n• MALI : HIGH 🟢\n\n📸 **INSTAGRAM 11**\n• ARMENIA : HIGH 🟢\n\n🕒 *Updated just now*"
     keyboard = [[InlineKeyboardButton("🔄 Refresh", callback_data="refresh_traffic")], [InlineKeyboardButton("❌ Close", callback_data="close_menu")]]
     if edit and update.callback_query:
-        await update.callback_query.edit_message_text(traffic_text, reply_markup=get_video_markup() if False else InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+        await update.callback_query.edit_message_text(traffic_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
     else:
         await update.message.reply_text(traffic_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
 
@@ -117,6 +117,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if data.startswith("svc_"):
         service = data.split("_")[1]
+        await query.exit_message_text if hasattr(query, 'exit_message_text') else None
         await query.edit_message_text(f"Select a country for {service.upper()}:", reply_markup=get_country_markup(service))
     
     elif data.startswith("num_"):
